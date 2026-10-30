@@ -1,0 +1,8 @@
+{
+    "appName": "CD_Project",
+    "version": "1.0.0",
+    "environment": "development",
+    "debug": true,
+    "port": 3000,
+    "logLevel": "info"
+}

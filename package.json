@@ -1,0 +1,25 @@
+{
+  "name": "cd_project",
+  "version": "1.0.0",
+  "description": "NexCC — Interactive Optimizing Compiler & Compiler Construction Workbench",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "start:sh": "./start.sh",
+    "test": "node test/nexcc.test.js",
+    "dev": "node src/main.js",
+    "build": "echo 'Built NexCC core'"
+  },
+  "keywords": [
+    "compiler",
+    "optimizing-compiler",
+    "automata",
+    "grammar",
+    "ssa",
+    "rv32im",
+    "riscv",
+    "time-travel-debugger"
+  ],
+  "author": "N. Rithvik Sai, Ch. Jitheswar",
+  "license": "MIT"
+}

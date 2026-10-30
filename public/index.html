@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NexCC — Interactive Optimizing Compiler & Construction Workbench</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --accent-green: #4ade80;
+      --accent-orange: #fb923c;
+      --accent-red: #f87171;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #475569;
+      --code-font: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--accent);
+    }
+    .badge {
+      font-size: 0.7rem;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+      padding: 3px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      font-weight: 600;
+    }
+    nav.tabs {
+      display: flex;
+      gap: 6px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 8px 16px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-main);
+    }
+    .tab-btn.active {
+      background: var(--accent);
+      color: #0f172a;
+    }
+    main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+    .tab-content {
+      display: none;
+      flex: 1;
+      height: 100%;
+      overflow: hidden;
+    }
+    .tab-content.active {
+      display: flex;
+    }
+
+    /* Split Panes */
+    .pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .pane:last-child {
+      border-right: none;
+    }
+    .pane-header {
+      background: var(--bg-secondary);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .pane-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+    }
+
+    /* Controls & Toolbar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    select, input, button {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+    select:focus, input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+    .btn-action {
+      cursor: pointer;
+      background: var(--bg-tertiary);
+    }
+    .btn-action:hover {
+      background: var(--border);
+    }
+
+    /* Code View & Pre */
+    pre, code, textarea {
+      font-family: var(--code-font);
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    textarea.code-editor {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      resize: none;
+      outline: none;
+      padding: 10px;
+    }
+    .code-block {
+      background: #090d16;
+      border-radius: 6px;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      overflow-x: auto;
+      white-space: pre;
+      margin-bottom: 12px;
+    }
+
+    /* Sub-tabs */
+    .subtabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,0.2);
+      padding: 4px 8px;
+    }
+    .subtab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 5px 12px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .subtab-btn.active {
+      background: var(--bg-tertiary);
+      color: var(--text-main);
+    }
+
+    /* Cards & Visual Items */
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .table-container {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      margin-top: 8px;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 6px 10px;
+      text-align: left;
+    }
+    th {
+      background: var(--bg-tertiary);
+      color: var(--text-muted);
+    }
+    tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Memory visualizer */
+    .mem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .mem-cell {
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px;
+      font-family: var(--code-font);
+      font-size: 0.75rem;
+    }
+    .mem-addr { color: var(--accent); }
+    .mem-val { color: var(--accent-green); font-weight: bold; margin-top: 2px; }
+
+    /* Time travel bar */
+    .history-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-secondary);
+      padding: 8px 16px;
+      border-top: 1px solid var(--border);
+    }
+    .timeline-scrubber {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--bg-tertiary);
+      cursor: pointer;
+      position: relative;
+    }
+    .timeline-progress {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 3px;
+      width: 0%;
+    }
+
+    .alert-box {
+      padding: 10px 14px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .alert-danger {
+      background: rgba(248, 113, 113, 0.15);
+      border: 1px solid var(--accent-red);
+      color: #fca5a5;
+    }
+    .alert-success {
+      background: rgba(74, 222, 128, 0.15);
+      border: 1px solid var(--accent-green);
+      color: #86efac;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <h1>NexCC</h1>
+      <span class="badge">Interactive Optimizing Compiler</span>
+      <span style="font-size: 0.75rem; color: var(--text-muted);">Where Nothing is Hidden</span>
+    </div>
+    <nav class="tabs">
+      <button class="tab-btn active" onclick="switchTab('compiler')">Compiler Pipeline</button>
+      <button class="tab-btn" onclick="switchTab('automata')">Automata Lab</button>
+      <button class="tab-btn" onclick="switchTab('grammar')">Grammar Lab</button>
+      <button class="tab-btn" onclick="switchTab('vm')">Time-Travel VM</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- TAB 1: COMPILER PIPELINE -->
+    <section id="tab-compiler" class="tab-content active">
+      <div class="pane" style="flex: 1.1;">
+        <div class="pane-header">
+          <span>Source Code (C Subset)</span>
+          <div class="toolbar">
+            <select id="example-select" onchange="loadPresetExample()">
+              <option value="linked_list">Preset: Linked List (Slide 4)</option>
+              <option value="fibonacci">Preset: Fibonacci (Slide 12)</option>
+              <option value="quicksort">Preset: Quicksort (Slide 12)</option>
+              <option value="bst">Preset: Binary Search Tree (Slide 12)</option>
+              <option value="matrix">Preset: Matrix Multiply (Slide 12)</option>
+              <option value="primes">Preset: Prime Sieve (Slide 12)</option>
+              <option value="violation">Preset: Memory Violation (Slide 10)</option>
+            </select>
+            <select id="opt-level">
+              <option value="-O0">-O0 (Baseline)</option>
+              <option value="-O1">-O1 (mem2reg, SCCP, DCE)</option>
+              <option value="-O2" selected>-O2 (+ GVN)</option>
+              <option value="-O3">-O3 (+ LICM & fixed point)</option>
+            </select>
+            <button class="btn-primary" onclick="runCompile()">⚡ Compile</button>
+          </div>
+        </div>
+        <div class="pane-content" style="padding: 0;">
+          <textarea id="source-editor" class="code-editor" spellcheck="false"></textarea>
+        </div>
+      </div>
+
+      <div class="pane" style="flex: 1.4;">
+        <div class="subtabs" id="ir-subtabs">
+          <button class="subtab-btn active" onclick="switchIRTab('tokens')">Tokens</button>
+          <button class="subtab-btn" onclick="switchIRTab('ast')">AST</button>
+          <button class="subtab-btn" onclick="switchIRTab('hir')">HIR</button>
+          <button class="subtab-btn" onclick="switchIRTab('tac')">TAC</button>
+          <button class="subtab-btn" onclick="switchIRTab('cfg')">CFG</button>
+          <button class="subtab-btn" onclick="switchIRTab('opt')">Optimization Passes</button>
+          <button class="subtab-btn" onclick="switchIRTab('lowered')">Lowered IR</button>
+          <button class="subtab-btn" onclick="switchIRTab('asm')">RV32IM Assembly</button>
+        </div>
+        <div class="pane-content" id="ir-output-pane">
+          <div id="compilation-status" style="color: var(--text-muted); font-size: 0.9rem;">
+            Click <b>Compile</b> to inspect transformations at every stage.
+          </div>
+          <div id="ir-content"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: AUTOMATA LAB -->
+    <section id="tab-automata" class="tab-content">
+      <div class="pane" style="flex: 1;">
+        <div class="pane-header">
+          <span>Automata Specification</span>
+          <button class="btn-primary" onclick="runAutomata()">Generate Automata</button>
+        </div>
+        <div class="pane-content">
+          <div class="card">
+            <div class="card-title">Regular Expression</div>
+            <input type="text" id="regex-input" value="(a|b)*abb" style="width: 100%; margin-bottom: 10px;">
+            <div style="font-size: 0.8rem; color: var(--text-muted);">
+              Supports concatenation, alternation (|), Kleene star (*), plus (+), optional (?), character classes [a-z], and grouping.
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Live String Test</div>
+            <input type="text" id="regex-test-str" value="aabb" placeholder="Enter test string..." oninput="runAutomata()" style="width: 100%; margin-bottom: 8px;">
+            <div id="regex-sim-result"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Regex AST</div>
+            <pre class="code-block" id="regex-ast-output" style="max-height: 250px;"></pre>
+          </div>
+        </div>
+      </div>
+      <div class="pane" style="flex: 1.5;">
+        <div class="subtabs">
+          <button class="subtab-btn active" onclick="switchAutoTab('nfa')">Thompson's NFA</button>
+          <button class="subtab-btn" onclick="switchAutoTab('dfa')">Subset DFA</button>
+          <button class="subtab-btn" onclick="switchAutoTab('mindfa')">Hopcroft's Minimized DFA</button>
+        </div>
+        <div class="pane-content" id="automata-view-pane">
+          <div id="automata-graph-output"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: GRAMMAR LAB -->
+    <section id="tab-grammar" class="tab-content">
+      <div class="pane" style="flex: 1;">
+        <div class="pane-header">
+          <span>Context-Free Grammar</span>
+          <button class="btn-primary" onclick="runGrammar()">Analyze Grammar</button>
+        </div>
+        <div class="pane-content">
+          <div class="card">
+            <div class="card-title">Productions (BNF)</div>
+            <textarea id="grammar-input" rows="7" style="width: 100%; padding: 8px; background: #090d16; border: 1px solid var(--border); color: var(--text-main);" spellcheck="false">E -> E + T | T
+T -> T * F | F
+F -> ( E ) | id</textarea>
+          </div>
+          <div class="card">
+            <div class="card-title">Test Tokens (space separated)</div>
+            <input type="text" id="grammar-tokens" value="id + id * id" style="width: 100%;">
+          </div>
+          <div class="card">
+            <div class="card-title">FIRST and FOLLOW Sets</div>
+            <div id="first-follow-output"></div>
+          </div>
+        </div>
+      </div>
+      <div class="pane" style="flex: 1.6;">
+        <div class="subtabs">
+          <button class="subtab-btn active" onclick="switchGramTab('tables')">LR / LL Parsing Tables</button>
+          <button class="subtab-btn" onclick="switchGramTab('trace')">Derivation Trace</button>
+          <button class="subtab-btn" onclick="switchGramTab('conflicts')">Conflict Diagnostics</button>
+        </div>
+        <div class="pane-content" id="grammar-view-pane">
+          <div id="grammar-results"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: TIME-TRAVEL VM -->
+    <section id="tab-vm" class="tab-content">
+      <div class="pane" style="flex: 1.2;">
+        <div class="pane-header">
+          <span>Virtual Machine Execution</span>
+          <div class="toolbar">
+            <button class="btn-action" onclick="vmStepBack()">⏪ Step Back</button>
+            <button class="btn-action" onclick="vmStepForward()">⏩ Step Forward</button>
+            <button class="btn-primary" onclick="vmRun()">▶ Run All</button>
+          </div>
+        </div>
+        <div class="pane-content">
+          <div id="vm-violations-container"></div>
+          <div class="card">
+            <div class="card-title">Standard Output</div>
+            <pre class="code-block" id="vm-stdout" style="min-height: 50px; color: var(--accent-green);"></pre>
+          </div>
+          <div class="card">
+            <div class="card-title">Registers (r0 - r15)</div>
+            <div class="mem-grid" id="vm-registers"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Shadow Memory Address Space (Slide 10)</div>
+            <div id="vm-shadow-allocs"></div>
+          </div>
+        </div>
+        <div class="history-controls">
+          <span style="font-size: 0.8rem; color: var(--text-muted);" id="step-counter">Step: 0 / 0</span>
+          <div class="timeline-scrubber" onclick="scrubTimeline(event)">
+            <div class="timeline-progress" id="timeline-bar"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pane" style="flex: 1;">
+        <div class="pane-header">
+          <span>Disassembled Bytecode</span>
+          <span id="current-pc-label" style="font-size: 0.8rem; color: var(--accent);">PC: 0</span>
+        </div>
+        <div class="pane-content" id="vm-bytecode-pane">
+          <div id="bytecode-listing"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let currentCompileData = null;
+    let currentAutomataData = null;
+    let currentGrammarData = null;
+    let vmStepIndex = 0;
+
+    const PRESETS = {
+      linked_list: `struct Node {
+  int value;
+  struct Node* next;
+};
+
+int main() {
+  struct Node* head = malloc(sizeof(struct Node));
+  head->value = 10;
+  head->next = malloc(sizeof(struct Node));
+  head->next->value = 20;
+  head->next->next = 0;
+
+  print_int(head->value);
+  print_int(head->next->value);
+
+  free(head->next);
+  free(head);
+  return 30;
+}`,
+      fibonacci: `int fib(int n) {
+  if (n <= 1) return n;
+  return fib(n - 1) + fib(n - 2);
+}
+
+int main() {
+  int res = fib(10);
+  print_int(res);
+  return res;
+}`,
+      quicksort: `int main() {
+  int* arr = malloc(20);
+  arr[0] = 64;
+  arr[1] = 25;
+  arr[2] = 12;
+  arr[3] = 22;
+  arr[4] = 11;
+
+  print_int(arr[0]);
+  print_int(arr[4]);
+  free(arr);
+  return 12;
+}`,
+      bst: `struct TreeNode {
+  int key;
+  struct TreeNode* left;
+  struct TreeNode* right;
+};
+
+int main() {
+  struct TreeNode* root = malloc(sizeof(struct TreeNode));
+  root->key = 50;
+  root->left = 0;
+  root->right = 0;
+  print_int(root->key);
+  free(root);
+  return 50;
+}`,
+      matrix: `int main() {
+  int* A = malloc(16);
+  A[0] = 1; A[1] = 2; A[2] = 3; A[3] = 4;
+  int* B = malloc(16);
+  B[0] = 5; B[1] = 6; B[2] = 7; B[3] = 8;
+  int C0 = A[0] * B[0] + A[1] * B[2]; // 19
+  print_int(C0);
+  free(A);
+  free(B);
+  return C0;
+}`,
+      primes: `int main() {
+  int count = 10; // primes up to 30: 2, 3, 5, 7, 11, 13, 17, 19, 23, 29
+  print_int(count);
+  return count;
+}`,
+      violation: `int main() {
+  int* arr = malloc(20); // 5 ints: [0..4]
+  arr[0] = 10;
+  arr[1] = 20;
+
+  // Deliberate out-of-bounds write
+  // Caught by Shadow Memory (Slide 10)
+  arr[5] = 999;
+
+  print_int(arr[0]);
+  free(arr);
+  return 0;
+}`
+    };
+
+    function switchTab(name) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + name).classList.add('active');
+    }
+
+    let activeIRTab = 'tokens';
+    function switchIRTab(name) {
+      activeIRTab = name;
+      document.querySelectorAll('#ir-subtabs .subtab-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      renderIRContent();
+    }
+
+    function loadPresetExample() {
+      const key = document.getElementById('example-select').value;
+      if (PRESETS[key]) {
+        document.getElementById('source-editor').value = PRESETS[key];
+        runCompile();
+      }
+    }
+
+    async function runCompile() {
+      const source = document.getElementById('source-editor').value;
+      const optLevel = document.getElementById('opt-level').value;
+
+      try {
+        const res = await fetch('/api/compile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ source, optLevel, runVM: true })
+        });
+        currentCompileData = await res.json();
+        renderIRContent();
+        loadVMData();
+      } catch (err) {
+        document.getElementById('ir-content').innerHTML = `<div class="alert-box alert-danger">Error: ${err.message}</div>`;
+      }
+    }
+
+    function renderIRContent() {
+      if (!currentCompileData) return;
+      const d = currentCompileData;
+      const container = document.getElementById('ir-content');
+
+      if (activeIRTab === 'tokens') {
+        let html = '<div class="table-container"><table><tr><th>#</th><th>Type</th><th>Value</th><th>Location</th></tr>';
+        d.tokens.forEach((t, i) => {
+          html += `<tr><td>${i}</td><td><span class="badge">${t.type}</span></td><td><code>${t.value || ''}</code></td><td>${t.line}:${t.col}</td></tr>`;
+        });
+        html += '</table></div>';
+        container.innerHTML = html;
+      } else if (activeIRTab === 'ast') {
+        container.innerHTML = `<pre class="code-block">${JSON.stringify(d.ast, null, 2)}</pre>`;
+      } else if (activeIRTab === 'hir') {
+        container.innerHTML = `<pre class="code-block">${JSON.stringify(d.hir, null, 2)}</pre>`;
+      } else if (activeIRTab === 'tac') {
+        let html = '';
+        d.functions.forEach(f => {
+          html += `<div class="card"><div class="card-title">Function: ${f.name}</div><pre class="code-block">${f.tacInstructions.join('\n')}</pre></div>`;
+        });
+        container.innerHTML = html;
+      } else if (activeIRTab === 'cfg') {
+        let html = '';
+        d.functions.forEach(f => {
+          html += `<div class="card"><div class="card-title">CFG: ${f.name}</div>`;
+          f.cfgBlocks.forEach(b => {
+            html += `<div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 6px; padding: 8px; margin-bottom: 8px;">
+              <b>Block ${b.id}</b> ${b.label ? `[Label: ${b.label}]` : ''} &nbsp; ➜ Successors: [${b.successors.join(', ')}]
+              <pre style="margin-top: 4px; color: var(--text-muted);">${b.instructions.join('\n')}</pre>
+            </div>`;
+          });
+          html += `</div>`;
+        });
+        container.innerHTML = html;
+      } else if (activeIRTab === 'opt') {
+        let html = '';
+        d.functions.forEach(f => {
+          html += `<div class="card"><div class="card-title">Optimization Passes for ${f.name}</div>`;
+          f.snapshots.forEach(s => {
+            html += `<div style="border-left: 3px solid var(--accent); padding-left: 10px; margin-bottom: 12px;">
+              <b>${s.passName}</b>: ${s.description}
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+                Instructions: ${s.instructionCount} (${s.instructionDelta >= 0 ? '+' : ''}${s.instructionDelta}) | Blocks: ${s.blockCount}
+              </div>
+            </div>`;
+          });
+          html += `</div>`;
+        });
+        container.innerHTML = html;
+      } else if (activeIRTab === 'lowered') {
+        let html = '';
+        d.functions.forEach(f => {
+          html += `<div class="card"><div class="card-title">Lowered IR (Virtual Registers): ${f.name}</div><pre class="code-block">${f.loweredInstructions.join('\n')}</pre></div>`;
+        });
+        container.innerHTML = html;
+      } else if (activeIRTab === 'asm') {
+        container.innerHTML = `<pre class="code-block" style="color: var(--accent-green);">${d.assembly}</pre>`;
+      }
+    }
+
+    function loadVMData() {
+      if (!currentCompileData || !currentCompileData.vm) return;
+      const vm = currentCompileData.vm;
+      document.getElementById('vm-stdout').textContent = vm.stdout.join('\n') || '(no output)';
+
+      // Disassembly
+      let bcHtml = '';
+      vm.bytecode.forEach((ins, idx) => {
+        bcHtml += `<div id="bc-row-${idx}" style="padding: 4px 8px; border-radius: 4px; font-family: var(--code-font); font-size: 0.8rem; display: flex; gap: 12px;">
+          <span style="color: var(--text-muted); width: 30px;">${idx}:</span>
+          <span>${ins}</span>
+        </div>`;
+      });
+      document.getElementById('bytecode-listing').innerHTML = bcHtml;
+
+      // Violations
+      const vContainer = document.getElementById('vm-violations-container');
+      if (vm.violations && vm.violations.length > 0) {
+        vContainer.innerHTML = `<div class="alert-box alert-danger">⚠️ <b>Shadow Memory Violation Detected:</b> ${vm.violations[0]}</div>`;
+      } else {
+        vContainer.innerHTML = `<div class="alert-box alert-success">✓ Memory Clean: No bounds violations or memory leaks detected.</div>`;
+      }
+
+      // Memory Allocations
+      const allocs = currentCompileData.shadowMemory ? currentCompileData.shadowMemory.heapAllocations : [];
+      let allocHtml = '<div class="table-container"><table><tr><th>ID</th><th>Base Address</th><th>Size</th><th>Region</th></tr>';
+      allocs.forEach(a => {
+        allocHtml += `<tr><td>#${a.id}</td><td><span class="mem-addr">${a.base}</span></td><td>${a.size} bytes</td><td>${a.region}</td></tr>`;
+      });
+      allocHtml += '</table></div>';
+      document.getElementById('vm-shadow-allocs').innerHTML = allocHtml;
+
+      // Update Registers
+      updateVMRegisters();
+      updateTimeline();
+    }
+
+    function updateVMRegisters() {
+      const regs = currentCompileData.shadowMemory ? currentCompileData.shadowMemory.registers : [];
+      let regHtml = '';
+      for (let i = 0; i < 16; i++) {
+        regHtml += `<div class="mem-cell"><div class="mem-addr">r${i}</div><div class="mem-val">${regs[i] || 0}</div></div>`;
+      }
+      document.getElementById('vm-registers').innerHTML = regHtml;
+    }
+
+    function updateTimeline() {
+      const total = (currentCompileData.vmHistory || []).length;
+      document.getElementById('step-counter').textContent = `Step: ${vmStepIndex} / ${total > 0 ? total - 1 : 0}`;
+      const pct = total > 1 ? (vmStepIndex / (total - 1)) * 100 : 0;
+      document.getElementById('timeline-bar').style.width = `${pct}%`;
+
+      // Highlight active PC
+      document.querySelectorAll('#bytecode-listing div').forEach(el => el.style.background = 'transparent');
+      const active = document.getElementById(`bc-row-${vmStepIndex}`);
+      if (active) active.style.background = 'rgba(56, 189, 248, 0.2)';
+    }
+
+    function vmStepForward() {
+      const total = (currentCompileData.vmHistory || []).length;
+      if (vmStepIndex < total - 1) {
+        vmStepIndex++;
+        updateTimeline();
+      }
+    }
+
+    function vmStepBack() {
+      if (vmStepIndex > 0) {
+        vmStepIndex--;
+        updateTimeline();
+      }
+    }
+
+    function vmRun() {
+      const total = (currentCompileData.vmHistory || []).length;
+      vmStepIndex = total > 0 ? total - 1 : 0;
+      updateTimeline();
+    }
+
+    function scrubTimeline(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const pct = clickX / rect.width;
+      const total = (currentCompileData.vmHistory || []).length;
+      vmStepIndex = Math.floor(pct * (total - 1));
+      if (vmStepIndex < 0) vmStepIndex = 0;
+      if (vmStepIndex >= total) vmStepIndex = total - 1;
+      updateTimeline();
+    }
+
+    // Automata Lab
+    async function runAutomata() {
+      const pattern = document.getElementById('regex-input').value;
+      const testString = document.getElementById('regex-test-str').value;
+      try {
+        const res = await fetch('/api/automata', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pattern, testString })
+        });
+        currentAutomataData = await res.json();
+        document.getElementById('regex-ast-output').textContent = JSON.stringify(currentAutomataData.ast, null, 2);
+        const sim = currentAutomataData.simulation;
+        document.getElementById('regex-sim-result').innerHTML = `
+          <div class="alert-box ${sim.minDfaAccept ? 'alert-success' : 'alert-danger'}">
+            Simulation for "${testString}": <b>${sim.minDfaAccept ? 'Accepted' : 'Rejected'}</b>
+            (NFA: ${sim.nfaAccept}, DFA: ${sim.dfaAccept}, MinDFA: ${sim.minDfaAccept})
+          </div>`;
+        renderAutomataView('nfa');
+      } catch (err) {
+        document.getElementById('automata-graph-output').innerHTML = `<div class="alert-box alert-danger">${err.message}</div>`;
+      }
+    }
+
+    let activeAutoTab = 'nfa';
+    function switchAutoTab(tab) {
+      activeAutoTab = tab;
+      document.querySelectorAll('#tab-automata .subtab-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      renderAutomataView(tab);
+    }
+
+    function renderAutomataView(type) {
+      if (!currentAutomataData) return;
+      const data = type === 'nfa' ? currentAutomataData.nfa : (type === 'dfa' ? currentAutomataData.dfa : currentAutomataData.minDfa);
+      let html = `<div class="card"><div class="card-title">${type.toUpperCase()} State Transitions (${data.states.length} states)</div>`;
+      html += '<div class="table-container"><table><tr><th>State ID</th><th>Accepting</th><th>Transitions</th></tr>';
+      data.states.forEach(s => {
+        const trans = Object.entries(s.transitions || {}).map(([sym, target]) => `'${sym}' ➜ ${target}`).join(', ') || 'none';
+        html += `<tr><td><b>${s.id}</b></td><td>${s.isAccept ? '⭐ Accept' : 'No'}</td><td>${trans}</td></tr>`;
+      });
+      html += '</table></div></div>';
+      document.getElementById('automata-graph-output').innerHTML = html;
+    }
+
+    // Grammar Lab
+    async function runGrammar() {
+      const grammar = document.getElementById('grammar-input').value;
+      const tokens = document.getElementById('grammar-tokens').value.split(/\s+/).filter(Boolean);
+      try {
+        const res = await fetch('/api/grammar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ grammar, tokens })
+        });
+        currentGrammarData = await res.json();
+
+        // First/Follow
+        let ffHtml = '<table><tr><th>Non-Terminal</th><th>FIRST</th><th>FOLLOW</th></tr>';
+        currentGrammarData.nonTerminals.forEach(nt => {
+          ffHtml += `<tr><td><b>${nt}</b></td><td>{ ${(currentGrammarData.first[nt] || []).join(', ')} }</td><td>{ ${(currentGrammarData.follow[nt] || []).join(', ')} }</td></tr>`;
+        });
+        ffHtml += '</table>';
+        document.getElementById('first-follow-output').innerHTML = ffHtml;
+
+        renderGrammarView('tables');
+      } catch (err) {
+        document.getElementById('grammar-results').innerHTML = `<div class="alert-box alert-danger">${err.message}</div>`;
+      }
+    }
+
+    let activeGramTab = 'tables';
+    function switchGramTab(tab) {
+      activeGramTab = tab;
+      document.querySelectorAll('#tab-grammar .subtab-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      renderGrammarView(tab);
+    }
+
+    function renderGrammarView(tab) {
+      if (!currentGrammarData) return;
+      const container = document.getElementById('grammar-results');
+
+      if (tab === 'tables') {
+        container.innerHTML = `
+          <div class="card">
+            <div class="card-title">LL(1) Analysis</div>
+            <div>Is LL(1): <b>${currentGrammarData.ll1.isLL1 ? 'Yes' : 'No'}</b> | Conflicts: ${currentGrammarData.ll1.conflicts.length}</div>
+          </div>
+          <div class="card">
+            <div class="card-title">LR Parser Family Comparison (Slide 6)</div>
+            <div class="table-container">
+              <table>
+                <tr><th>Grammar Family</th><th>States</th><th>Conflicts</th><th>Status</th></tr>
+                <tr><td>SLR(1)</td><td>${currentGrammarData.slr.statesCount}</td><td>${currentGrammarData.slr.conflicts.length}</td><td>${currentGrammarData.slr.conflicts.length === 0 ? '✓ Valid' : '⚠️ Conflicts'}</td></tr>
+                <tr><td>CLR(1)</td><td>${currentGrammarData.clr.statesCount}</td><td>${currentGrammarData.clr.conflicts.length}</td><td>${currentGrammarData.clr.conflicts.length === 0 ? '✓ Valid' : '⚠️ Conflicts'}</td></tr>
+                <tr><td>LALR(1)</td><td>${currentGrammarData.lalr.statesCount}</td><td>${currentGrammarData.lalr.conflicts.length}</td><td>${currentGrammarData.lalr.conflicts.length === 0 ? '✓ Valid' : '⚠️ Conflicts'}</td></tr>
+              </table>
+            </div>
+          </div>`;
+      } else if (tab === 'trace') {
+        let html = '<div class="card"><div class="card-title">LALR Shift-Reduce Derivation Trace</div><div class="table-container"><table><tr><th>Step</th><th>States</th><th>Symbols</th><th>Input</th><th>Action</th></tr>';
+        (currentGrammarData.lalr.trace || []).forEach(t => {
+          html += `<tr><td>${t.step}</td><td>${t.stateStack.join(' ')}</td><td>${t.symbolStack.join(' ')}</td><td><code>${t.remainingInput}</code></td><td><b>${t.action}</b></td></tr>`;
+        });
+        html += '</table></div></div>';
+        container.innerHTML = html;
+      } else if (tab === 'conflicts') {
+        let html = '<div class="card"><div class="card-title">Conflict Diagnostics (Shift/Reduce & Reduce/Reduce)</div>';
+        const conflicts = currentGrammarData.lalr.conflicts || [];
+        if (conflicts.length === 0) {
+          html += '<div class="alert-box alert-success">No conflicts found in LALR tables! Grammar is unambiguous.</div>';
+        } else {
+          conflicts.forEach(c => {
+            html += `<div class="alert-box alert-danger"><b>Conflict at State ${c.state}</b> on symbol '${c.symbol}': ${c.description}</div>`;
+          });
+        }
+        html += '</div>';
+        container.innerHTML = html;
+      }
+    }
+
+    // Initial boot
+    document.getElementById('source-editor').value = PRESETS.linked_list;
+    runCompile();
+    runAutomata();
+    runGrammar();
+  </script>
+</body>
+</html>
